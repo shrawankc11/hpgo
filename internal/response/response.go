@@ -17,9 +17,9 @@ const (
 )
 
 type Writer struct {
-	writer       io.WriteCloser
-	headers      *headers.Header
-	wroteHeaders bool
+	writer         io.WriteCloser
+	headers        *headers.Header
+	headersWritten bool
 }
 
 func GetDefaultHeaders(cl int) *headers.Header {
@@ -31,15 +31,12 @@ func GetDefaultHeaders(cl int) *headers.Header {
 }
 
 func NewWriter(con net.Conn) *Writer {
-	h := headers.NewHeaders()
-	h.Set("Content-length", fmt.Sprintf("%d", 0))
-	h.Set("Connection", "close")
-	h.Set("Content-type", "text/plain")
+	h := GetDefaultHeaders(0)
 
 	return &Writer{
-		writer:       con,
-		headers:      h,
-		wroteHeaders: false,
+		writer:         con,
+		headers:        h,
+		headersWritten: false,
 	}
 }
 
@@ -71,6 +68,11 @@ func (w *Writer) Header() *headers.Header {
 }
 
 func (w *Writer) WriteHeaders() error {
+
+	if w.headersWritten {
+		return fmt.Errorf("Cannot set header after they are already sent.")
+	}
+
 	var err error
 	w.headers.Foreach(func(key, val string) {
 		_, err = w.writer.Write([]byte(fmt.Sprintf("%s: %s\r\n", key, val)))
@@ -78,7 +80,7 @@ func (w *Writer) WriteHeaders() error {
 
 	_, err = w.writer.Write([]byte("\r\n"))
 
-	w.wroteHeaders = true
+	w.headersWritten = true
 
 	if err != nil {
 		return err
@@ -90,9 +92,9 @@ func (w *Writer) WriteHeaders() error {
 func (w *Writer) Write(data []byte) (int, error) {
 	cl := len(data)
 
-	w.headers.Set("Content-length", fmt.Sprintf("%d", cl))
+	w.headers.Replace("Content-length", fmt.Sprintf("%d", cl))
 
-	if !w.wroteHeaders {
+	if !w.headersWritten && cl > 0 {
 		w.WriteHeaders()
 	}
 

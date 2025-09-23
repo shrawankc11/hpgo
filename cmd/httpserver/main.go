@@ -19,8 +19,8 @@ var TotalRequests uint = 0
 func main() {
 	server, err := server.Serve(port, func(w *response.Writer, req *request.Request) {
 		TotalRequests += 1
-		buf := []byte(fmt.Sprintf("Hello, you are request number %d", TotalRequests))
 		w.WriteStatusLine(response.StatusOk)
+		buf := []byte(fmt.Sprintf("Hello, you are request number %d", TotalRequests))
 		w.Write(buf)
 	})
 

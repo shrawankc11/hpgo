@@ -14,11 +14,16 @@ type RequestLine struct {
 	HttpVersion   string
 }
 
+type Param struct {
+	params map[string]string
+}
+
 type Request struct {
 	RequestLine RequestLine
 	Headers     *headers.Header
 	Body        []byte
 	Complete    bool
+	Params      *Param
 }
 
 type RequestState string
@@ -32,9 +37,19 @@ const (
 var SEPARATOR = "\r\n"
 
 func MakeRequest() *Request {
+	params := make(map[string]string)
+
+	rParams := &Param{
+		params: params,
+	}
 	return &Request{
 		Complete: false,
+		Params:   rParams,
 	}
+}
+
+func (p *Param) Get(key string) string {
+	return p.params[key]
 }
 
 func ParseRequestLine(b []byte) (*RequestLine, int, error) {
@@ -115,8 +130,8 @@ func RequestFromReader(read io.ReadCloser) (*Request, error) {
 	bufLen := 0
 
 	for !request.Complete {
-		// do i really need the bufLen?? since I am already slicing it below
-		// I minght not need to slice it here??
+		// do i really need the bufLen?? I am already slicing it below
+		// I might not need to slice it here??
 		n, err := read.Read(buffer[bufLen:])
 
 		if err != nil {
