@@ -23,8 +23,7 @@ func main() {
 			w.Header().Set("Transfer-encoding", "chunked")
 			w.WriteHeaders()
 		}
-		buf := []byte("")
-		buf = fmt.Appendf(buf, "Hello, you are request number %d", TotalRequests)
+		buf := fmt.Appendf([]byte(""), "Hello, you are request number %d", TotalRequests)
 		w.Write(buf)
 		TotalRequests += 1
 	})

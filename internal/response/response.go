@@ -76,7 +76,7 @@ func (w *Writer) WriteHeaders() error {
 
 	var err error
 	w.headers.Foreach(func(key, val string) {
-		_, err = w.writer.Write([]byte(fmt.Sprintf("%s: %s\r\n", key, val)))
+		_, err = w.writer.Write([]byte(fmt.Appendf([]byte(""), "%s: %s\r\n", key, val)))
 	})
 
 	_, err = w.writer.Write([]byte("\r\n"))
@@ -116,7 +116,7 @@ func (w *Writer) Write(data []byte) (int, error) {
 				w.writeChuncked(buffer)
 			}
 
-			n, err := w.writer.Write([]byte(fmt.Sprintf("0\r\n\r\n")))
+			n, err := w.writer.Write(fmt.Appendf([]byte(""), "0\r\n\r\n"))
 
 			if err != nil {
 				return 0, err
