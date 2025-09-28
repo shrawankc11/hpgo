@@ -14,14 +14,19 @@ import (
 
 const port uint16 = 8888
 
-var TotalRequests uint = 0
+var TotalRequests uint = 1
 
 func main() {
 	server, err := server.Serve(port, func(w *response.Writer, req *request.Request) {
-		TotalRequests += 1
 		w.WriteStatusLine(response.StatusOk)
-		buf := []byte(fmt.Sprintf("Hello, you are request number %d", TotalRequests))
+		if req.RequestLine.RequestTarget == "/get-chunked-res" {
+			w.Header().Set("Transfer-encoding", "chunked")
+			w.WriteHeaders()
+		}
+		buf := []byte("")
+		buf = fmt.Appendf(buf, "Hello, you are request number %d", TotalRequests)
 		w.Write(buf)
+		TotalRequests += 1
 	})
 
 	if err != nil {

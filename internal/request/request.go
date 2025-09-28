@@ -124,14 +124,11 @@ func (r *Request) Parse(b []byte) (int, error) {
 
 func RequestFromReader(read io.ReadCloser) (*Request, error) {
 	request := MakeRequest()
-	// defer read.Close()
 
 	buffer := make([]byte, 1024)
 	bufLen := 0
 
 	for !request.Complete {
-		// do i really need the bufLen?? I am already slicing it below
-		// I might not need to slice it here??
 		n, err := read.Read(buffer[bufLen:])
 
 		if err != nil {

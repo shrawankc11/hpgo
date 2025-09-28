@@ -1,6 +1,7 @@
 package response
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net"
@@ -89,16 +90,51 @@ func (w *Writer) WriteHeaders() error {
 	return nil
 }
 
+func (w *Writer) writeChuncked(data []byte) (int, error) {
+	d := []byte("")
+	d = fmt.Appendf(d, "%s", fmt.Sprintf("%x\r\n", len(data)))
+	d = fmt.Appendf(d, "%s\r\n", data)
+	w.writer.Write(d)
+	return 0, nil
+}
+
 func (w *Writer) Write(data []byte) (int, error) {
-	cl := len(data)
+	cl := w.headers.GetInt("Content-length")
+	if w.headersWritten {
+		if cl == 0 {
+			reader := bytes.NewReader(data)
+			buffer := make([]byte, 10)
 
-	w.headers.Replace("Content-length", fmt.Sprintf("%d", cl))
+			for reader.Len() > 0 {
+				n, err := reader.Read(buffer)
 
-	if !w.headersWritten && cl > 0 {
-		w.WriteHeaders()
+				if err != nil {
+					return 0, err
+				}
+
+				buffer = buffer[:n]
+				w.writeChuncked(buffer)
+			}
+
+			n, err := w.writer.Write([]byte(fmt.Sprintf("0\r\n\r\n")))
+
+			if err != nil {
+				return 0, err
+			}
+
+			return n, nil
+		}
 	}
 
+	if cl == 0 {
+		cl = len(data)
+		w.headers.Replace("Content-length", fmt.Sprintf("%d", cl))
+	}
+
+	w.WriteHeaders()
+
 	n, err := w.writer.Write(data)
+
 	if err != nil {
 		return 0, err
 	}

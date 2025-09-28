@@ -3,6 +3,7 @@ package headers
 import (
 	"bytes"
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -21,6 +22,10 @@ func (h *Header) Foreach(cb func(key, val string)) {
 	}
 }
 
+func (h *Header) Replace(key, val string) {
+	h.headers[strings.ToLower(key)] = val
+}
+
 func (h *Header) Set(key, value string) {
 	if v := h.Get(key); len(v) > 1 {
 		newVal := fmt.Sprintf("%s, %s", v, value)
@@ -28,11 +33,21 @@ func (h *Header) Set(key, value string) {
 	} else {
 		h.headers[strings.ToLower(key)] = value
 	}
-	h.headers[strings.ToLower(key)] = strings.ToLower(value)
 }
 
 func (h *Header) Get(key string) string {
 	return h.headers[strings.ToLower(key)]
+}
+
+func (h *Header) GetInt(key string) int {
+	val := h.Get(key)
+	intVal, _ := strconv.Atoi(val)
+	return intVal
+}
+
+func (h *Header) Has(key string) bool {
+	_, ok := h.headers[strings.ToLower(key)]
+	return ok
 }
 
 func (h *Header) isTokenValid(value string) bool {
